@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import status_badge, empty %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}{{ 'Project dashboard' if current_user['role'] == 'admin' else 'Team dashboard' }}{% endblock %}
+{% block content %}
+{% set order = [('Completed','#2a9d5c'),('Under Review','#e0a100'),('Submitted','#7a5cd0'),('In Progress','#2f7fd4'),('Not Started','#9aa8b6'),('Rejected','#d45a5a'),('Overdue','#b42318')] %}
+<section class="panel mb-4">
+  <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+    <div>
+      <div class="sub">Overall project completion</div>
+      <div class="big-pct">{{ stats.completion_pct }}%</div>
+    </div>
+    <div class="text-end sub">{{ stats.completed }} of {{ stats.total_tasks }} tasks completed<br>
+      {% if stats.overdue %}<span class="due-late"><i class="bi bi-alarm me-1"></i>{{ stats.overdue }} overdue</span>{% else %}No overdue tasks{% endif %}</div>
+  </div>
+  {% if stats.total_tasks %}
+  <div class="pipeline" role="img" aria-label="Task status distribution">
+    {% for name, color in order %}{% set c = stats.status_counts[name] %}{% if c %}<span style="width:{{ c * 100 / stats.total_tasks }}%;background:{{ color }}" title="{{ name }}: {{ c }}"></span>{% endif %}{% endfor %}
+  </div>
+  <div class="legend">{% for name, color in order %}<span><i style="background:{{ color }}"></i>{{ name }} {{ stats.status_counts[name] }}</span>{% endfor %}</div>
+  {% else %}<div class="pipeline"></div><div class="sub mt-2">No tasks have been assigned yet.</div>{% endif %}
+</section>
+
+<div class="kpi-grid mb-4">
+  <a class="kpi" href="{{ url_for('interns') }}"><div class="k-top">Total interns <i class="bi bi-people"></i></div><div class="k-val">{{ stats.interns }}</div></a>
+  <a class="kpi" href="{{ url_for('teams') }}"><div class="k-top">Total teams <i class="bi bi-diagram-3"></i></div><div class="k-val">{{ stats.teams }}</div></a>
+  <a class="kpi" href="{{ url_for('tasks') }}"><div class="k-top">Assigned tasks <i class="bi bi-list-check"></i></div><div class="k-val">{{ stats.total_tasks }}</div></a>
+  <a class="kpi k-good" href="{{ url_for('tasks', status='Completed') }}"><div class="k-top">Completed <i class="bi bi-check2-circle"></i></div><div class="k-val">{{ stats.completed }}</div></a>
+  <a class="kpi" href="{{ url_for('tasks', status='Not Started') }}"><div class="k-top">Pending (not started) <i class="bi bi-hourglass-split"></i></div><div class="k-val">{{ stats.pending }}</div></a>
+  <a class="kpi" href="{{ url_for('tasks', status='In Progress') }}"><div class="k-top">In progress <i class="bi bi-arrow-repeat"></i></div><div class="k-val">{{ stats.in_progress }}</div></a>
+  <a class="kpi" href="{{ url_for('tasks', status='Submitted') }}"><div class="k-top">Submitted <i class="bi bi-send-check"></i></div><div class="k-val">{{ stats.submitted }}</div></a>
+  <a class="kpi {{ 'k-alert' if stats.overdue }}" href="{{ url_for('tasks', status='Overdue') }}"><div class="k-top">Overdue <i class="bi bi-alarm"></i></div><div class="k-val">{{ stats.overdue }}</div></a>
+  <a class="kpi" href="{{ url_for('assessments') }}"><div class="k-top">Assessment pending <i class="bi bi-clipboard2-pulse"></i></div><div class="k-val">{{ stats.assessment_pending }}</div></a>
+  <div class="kpi"><div class="k-top">Overall completion <i class="bi bi-pie-chart"></i></div><div class="k-val">{{ stats.completion_pct }}%</div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-xl-6"><div class="panel h-100"><h2 class="panel-title">Task status distribution</h2><div class="chart-box"><canvas id="chartStatus"></canvas></div></div></div>
+  <div class="col-xl-6"><div class="panel h-100"><h2 class="panel-title">Team-wise task completion</h2><div class="chart-box"><canvas id="chartTeams"></canvas></div></div></div>
+  <div class="col-xl-6"><div class="panel h-100"><h2 class="panel-title">Intern-wise performance <span class="sub fw-normal">top 10</span></h2><div class="chart-box"><canvas id="chartInterns"></canvas></div></div></div>
+  <div class="col-xl-6"><div class="panel h-100"><h2 class="panel-title">Monthly task submissions <span class="sub fw-normal">last 6 months</span></h2><div class="chart-box"><canvas id="chartMonthly"></canvas></div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-6"><div class="panel h-100">
+    <h2 class="panel-title">Overdue tasks <a class="btn btn-sm btn-outline-primary" href="{{ url_for('tasks', status='Overdue', sort='due') }}">View all</a></h2>
+    {% if overdue %}<div class="table-responsive"><table class="table table-sm">
+      <thead><tr><th>Task</th><th>Intern</th><th>Due</th><th>Late by</th></tr></thead>
+      <tbody>{% for t in overdue %}<tr class="row-link" onclick="location.href='{{ url_for('task_detail', task_id=t.id) }}'">
+        <td>{{ t.title }}<div class="sub mono">{{ t.task_code }}</div></td><td>{{ t.intern_name }}<div class="sub mono">{{ t.dit_id }}</div></td>
+        <td class="due-late">{{ t.due_date|fmt_date }}</td><td>{{ t.days_overdue }} day{{ '' if t.days_overdue == 1 else 's' }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}{{ empty('bi-emoji-smile', 'Nothing is overdue.') }}{% endif %}
+  </div></div>
+  <div class="col-xl-6"><div class="panel h-100">
+    <h2 class="panel-title">Due in the next 7 days</h2>
+    {% if soon %}<div class="table-responsive"><table class="table table-sm">
+      <thead><tr><th>Task</th><th>Intern</th><th>Status</th><th>Due</th></tr></thead>
+      <tbody>{% for t in soon %}<tr class="row-link" onclick="location.href='{{ url_for('task_detail', task_id=t.id) }}'">
+        <td>{{ t.title }}</td><td>{{ t.intern_name }}</td><td>{{ status_badge(t.eff_status) }}</td><td>{{ t.due_date|fmt_date }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}{{ empty('bi-calendar-check', 'No deadlines in the coming week.') }}{% endif %}
+  </div></div>
+  <div class="col-12"><div class="panel">
+    <h2 class="panel-title">Team progress</h2>
+    {% if teams %}<div class="table-responsive"><table class="table">
+      <thead><tr><th>Team</th><th>Leader</th><th class="text-center">Members</th><th class="text-center">Tasks</th><th class="text-center">Overdue</th><th style="min-width:200px">Completion</th></tr></thead>
+      <tbody>{% for t in teams %}<tr class="row-link" onclick="location.href='{{ url_for('team_detail', team_id=t.id) }}'">
+        <td class="fw-semibold">{{ t.name }}</td><td>{{ t.leader_name or '-' }}</td><td class="text-center">{{ t.members }}</td><td class="text-center">{{ t.completed }}/{{ t.total }}</td>
+        <td class="text-center">{% if t.overdue %}<span class="due-late">{{ t.overdue }}</span>{% else %}0{% endif %}</td>
+        <td><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1"><div class="progress-bar" style="width:{{ t.completion_pct }}%"></div></div><span class="small fw-semibold">{{ t.completion_pct }}%</span></div></td></tr>{% endfor %}</tbody></table></div>
+    {% else %}{{ empty('bi-diagram-3', 'No teams yet.') }}{% endif %}
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>window.DASHBOARD_API = "{{ url_for('api_dashboard') }}";</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

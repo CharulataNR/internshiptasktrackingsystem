@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, field, select %}
+{% block title %}{{ 'Edit task' if task else 'New task' }}{% endblock %}
+{% block heading %}{{ ('Edit task ' ~ task.task_code) if task else 'Create and assign task' }}{% endblock %}
+{% block content %}
+<form method="post" class="panel" novalidate style="max-width:980px">
+  {{ csrf() }}
+  <div class="row g-3">
+    <div class="col-md-8">{{ field('title', 'Task title', form, errors, required=True, placeholder='What should the intern deliver?') }}</div>
+    <div class="col-md-4"><label class="form-label">Task ID</label><input class="form-control" value="{{ task.task_code if task else 'Generated on save' }}" disabled></div>
+    <div class="col-12"><label class="form-label" for="description">Task description</label>
+      <textarea class="form-control {{ 'is-invalid' if errors.get('description') }}" id="description" name="description" rows="3" maxlength="2000">{{ form.get('description') or '' }}</textarea>
+      {% if errors.get('description') %}<div class="invalid-feedback">{{ errors['description'] }}</div>{% endif %}</div>
+    <div class="col-md-6"><label class="form-label" for="intern_id">Assigned intern <span class="text-danger">*</span></label>
+      <select class="form-select {{ 'is-invalid' if errors.get('intern_id') }}" id="intern_id" name="intern_id"><option value="">Select intern&hellip;</option>
+        {% for i in interns %}<option value="{{ i.id }}" data-dit="{{ i.dit_id }}" {{ 'selected' if form.get('intern_id')|string == i.id|string }}>{{ i.name }} ({{ i.dit_id }}){{ ' - ' ~ i.team_name if i.team_name }}</option>{% endfor %}</select>
+      {% if errors.get('intern_id') %}<div class="invalid-feedback">{{ errors['intern_id'] }}</div>{% endif %}</div>
+    <div class="col-md-6"><label class="form-label" for="dit_id_display">DIT ID</label><input class="form-control mono" id="dit_id_display" disabled></div>
+    <div class="col-md-4">{{ field('assigned_date', 'Assigned date', form, errors, type='date', required=True) }}</div>
+    <div class="col-md-4">{{ field('due_date', 'Due date', form, errors, type='date', required=True) }}</div>
+    <div class="col-md-4">{{ field('submission_date', 'Submission date', form, errors, type='date', help='Filled automatically when the task is submitted.') }}</div>
+    <div class="col-md-4"><label class="form-label" for="status">Task status</label>
+      <select class="form-select {{ 'is-invalid' if errors.get('status') }}" id="status" name="status">{% for s in TASK_STATUSES %}<option {{ 'selected' if (form.get('status') or 'Not Started') == s }}>{{ s }}</option>{% endfor %}</select>
+      {% if errors.get('status') %}<div class="invalid-feedback">{{ errors['status'] }}</div>{% endif %}</div>
+    <div class="col-md-4"><label class="form-label" for="assessment_status">Assessment status</label>
+      <select class="form-select {{ 'is-invalid' if errors.get('assessment_status') }}" id="assessment_status" name="assessment_status">{% for s in ASSESSMENT_STATUSES %}<option {{ 'selected' if (form.get('assessment_status') or 'Pending') == s }}>{{ s }}</option>{% endfor %}</select>
+      {% if errors.get('assessment_status') %}<div class="invalid-feedback">{{ errors['assessment_status'] }}</div>{% endif %}</div>
+    <div class="col-md-4">{{ field('assessment_score', 'Assessment score (0-100)', form, errors, type='number', extra='min="0" max="100" step="0.1"', help='Required when the assessment is Approved.') }}</div>
+    <div class="col-12"><label class="form-label" for="remarks">Remarks</label>
+      <textarea class="form-control {{ 'is-invalid' if errors.get('remarks') }}" id="remarks" name="remarks" rows="2" maxlength="1000">{{ form.get('remarks') or '' }}</textarea>
+      {% if errors.get('remarks') %}<div class="invalid-feedback">{{ errors['remarks'] }}</div>{% endif %}</div>
+  </div>
+  <div class="alert alert-light border small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>Tasks past their due date that are still <strong>Not Started</strong> or <strong>In Progress</strong> are shown as <strong>Overdue</strong> automatically. Approving an assessment marks the task Completed; rejecting it marks the task Rejected.</div>
+  <div class="d-flex gap-2 mt-4"><button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>{{ 'Save changes' if task else 'Create task' }}</button>
+    <a class="btn btn-light" href="{{ url_for('tasks') }}">Cancel</a></div>
+</form>
+{% endblock %}

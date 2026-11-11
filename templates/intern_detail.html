@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, status_badge, empty %}
+{% block title %}{{ intern.name }}{% endblock %}
+{% block heading %}{{ intern.name }} <span class="mono sub ms-2">{{ intern.dit_id }}</span>{% endblock %}
+{% block content %}
+<div class="panel mb-3">
+  <h2 class="panel-title">Intern details
+    <span class="d-flex gap-2"><a class="btn btn-sm btn-light" href="{{ url_for('interns') }}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    {% if current_user['role'] == 'admin' %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('intern_edit', intern_id=intern.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</span></h2>
+  <dl class="detail-grid mb-0">
+    <div><dt>Email</dt><dd>{{ intern.email }}</dd></div><div><dt>Phone</dt><dd>{{ intern.phone }}</dd></div>
+    <div><dt>College</dt><dd>{{ intern.college }}</dd></div>
+    <div><dt>Team</dt><dd>{% if intern.team_id %}<a href="{{ url_for('team_detail', team_id=intern.team_id) }}">{{ intern.team_name }}</a>{% else %}Not assigned{% endif %}</dd></div>
+    <div><dt>Assigned role</dt><dd>{{ intern.role }}</dd></div><div><dt>Joining date</dt><dd>{{ intern.joining_date|fmt_date }}</dd></div>
+    <div><dt>Tasks completed</dt><dd>{{ intern.completed_count }} of {{ intern.task_count }}</dd></div>
+  </dl>
+</div>
+<div class="panel">
+  <h2 class="panel-title">Assigned tasks <a class="btn btn-sm btn-primary" href="{{ url_for('task_new', intern=intern.id) }}"><i class="bi bi-plus-lg me-1"></i>Assign task</a></h2>
+  {% if tasks %}<div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Task</th><th>Assigned</th><th>Due</th><th>Submitted</th><th>Status</th><th>Assessment</th><th>Score</th></tr></thead>
+    <tbody>{% for t in tasks %}<tr class="row-link" onclick="location.href='{{ url_for('task_detail', task_id=t.id) }}'">
+      <td>{{ t.title }}<div class="sub mono">{{ t.task_code }}</div></td><td>{{ t.assigned_date|fmt_date }}</td>
+      <td class="{{ 'due-late' if t.eff_status == 'Overdue' }}">{{ t.due_date|fmt_date }}</td><td>{{ t.submission_date|fmt_date }}</td>
+      <td>{{ status_badge(t.eff_status) }}</td><td>{{ status_badge(t.assessment_status) }}</td><td>{{ '-' if t.assessment_score is none else t.assessment_score }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty('bi-list-check', 'No tasks assigned to this intern yet.') }}{% endif %}
+</div>
+{% endblock %}

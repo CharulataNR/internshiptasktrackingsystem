@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}User Guide{% endblock %}
+{% block heading %}User Guide{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-3"><div class="panel position-sticky" style="top:90px">
+    <div class="fw-semibold mb-2">On this page</div>
+    <nav class="nav flex-column small">
+      {% for id, t in [('roles','Roles & access'),('interns','Add interns'),('teams','Create teams'),('assign','Assign tasks'),('status','Update task status'),('overdue','Track overdue tasks'),('assess','Assess submissions'),('reports','Generate reports'),('excel','Export Excel files'),('tips','Tips & rules')] %}
+      <a class="nav-link px-0 py-1" href="#{{ id }}">{{ t }}</a>{% endfor %}
+    </nav></div></div>
+  <div class="col-lg-9">
+    <div class="panel mb-3" id="roles"><h2 class="panel-title">Roles and access</h2>
+      <p><strong>Administrator</strong> manages everything: interns, teams, tasks, assessments, users and settings.</p>
+      <p class="mb-0"><strong>Team Lead</strong> sees only their own team. A team lead can create and edit tasks for interns in that team, update task status, record assessments and download reports for that team. Interns, teams and users are managed by the administrator.</p></div>
+    <div class="panel mb-3" id="interns"><h2 class="panel-title">How to add interns</h2>
+      <ol><li>Open <strong>Intern Master</strong> and click <strong>Add intern</strong>.</li>
+        <li>Fill in name, <strong>DIT ID</strong>, email, 10-digit phone number, college, role and joining date. Fields marked * are mandatory.</li>
+        <li>Optionally pick a team. Click <strong>Add intern</strong>.</li></ol>
+      <p class="mb-0">The DIT ID must be unique; the system rejects duplicates. Use the search box (name, DIT ID or email) and the college/team filters to find interns. Use the pencil icon to edit and the bin icon to delete (this also deletes the intern's tasks).</p></div>
+    <div class="panel mb-3" id="teams"><h2 class="panel-title">How to create teams</h2>
+      <ol><li>Open <strong>Team Management</strong> and click <strong>Create team</strong>.</li>
+        <li>Enter a unique team name, a short description and, optionally, the team leader.</li>
+        <li>On the team page use <strong>Manage members</strong> to add unassigned interns, remove members or change the team leader.</li></ol>
+      <p class="mb-0">An intern belongs to one team at a time. To move an intern, edit the intern and choose the new team. The team page and the team list show the completion percentage of each team.</p></div>
+    <div class="panel mb-3" id="assign"><h2 class="panel-title">How to assign tasks</h2>
+      <ol><li>Open <strong>Task Tracker</strong> and click <strong>New task</strong> (or <em>Assign task</em> on an intern's page).</li>
+        <li>Enter the title and description, choose the intern (the DIT ID appears automatically) and set the assigned and due dates.</li>
+        <li>Click <strong>Create task</strong>. A Task ID such as TSK-0042 is generated.</li></ol>
+      <p class="mb-0">The due date cannot be earlier than the assigned date.</p></div>
+    <div class="panel mb-3" id="status"><h2 class="panel-title">How to update task status</h2>
+      <p>In the Task Tracker, change the status in the dropdown on the task's row; it saves immediately. You can also open a task and use <strong>Update status</strong>, or edit the task to change dates, remarks or assessment details.</p>
+      <p class="mb-0">Typical flow: <em>Not Started &rarr; In Progress &rarr; Submitted &rarr; Under Review &rarr; Completed</em> (or <em>Rejected</em> for rework). The submission date is filled in automatically when a task is submitted.</p></div>
+    <div class="panel mb-3" id="overdue"><h2 class="panel-title">How to track overdue tasks</h2>
+      <p>A task that is <em>Not Started</em> or <em>In Progress</em> after its due date is flagged <span class="st st-overdue">Overdue</span> automatically; nothing needs to be updated by hand.</p>
+      <p class="mb-0">See the <strong>Overdue</strong> card and the overdue table on the Dashboard, or filter the Task Tracker by status <em>Overdue</em>. The "Overdue Tasks" Excel report lists them with the number of days late.</p></div>
+    <div class="panel mb-3" id="assess"><h2 class="panel-title">How to assess submissions</h2>
+      <p>Open <strong>Assessment Management</strong>, click <strong>Assess</strong> on a submitted task, choose the assessment status, enter a score from 0 to 100 and optional remarks. <em>Approved</em> needs a score and completes the task; <em>Rejected</em> sends it back for rework. Every assessment is kept in the task's history.</p></div>
+    <div class="panel mb-3" id="reports"><h2 class="panel-title">How to generate reports</h2>
+      <p>Open <strong>Reports</strong>. The table shows every team's progress; click <strong>Open report</strong> for a printable team lead report (use <em>Print / save as PDF</em> in your browser).</p></div>
+    <div class="panel mb-3" id="excel"><h2 class="panel-title">How to export Excel files</h2>
+      <p>On the Reports page, click <strong>Download .xlsx</strong> on any of the eight report cards: Intern Master, Team Allocation, Complete Task Tracker, Completed Tasks, Pending Tasks, Overdue Tasks, Assessment Report and Team Lead Report. You can also filter the Task Tracker first and use <strong>Export filtered Excel</strong> to download exactly what you see. Files include headings, filters on every column, frozen header rows and colour-coded statuses.</p></div>
+    <div class="panel" id="tips"><h2 class="panel-title">Tips and rules</h2>
+      <ul class="mb-0"><li><strong>Pending</strong> on the dashboard means <em>Not Started</em>; the "Pending Tasks" Excel report lists all open work (every task that is not yet Completed).</li>
+        <li>Phone numbers are validated as 10-digit Indian mobile numbers (an optional +91 is accepted).</li>
+        <li>Change your password under <strong>Settings</strong>. Sign out when you finish.</li></ul></div>
+  </div>
+</div>
+{% endblock %}

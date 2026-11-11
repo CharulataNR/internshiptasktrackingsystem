@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, field, select %}
+{% block title %}{{ 'Edit intern' if intern else 'Add intern' }}{% endblock %}
+{% block heading %}{{ 'Edit intern' if intern else 'Add intern' }}{% endblock %}
+{% block content %}
+{% set opts = [] %}{% for t in teams %}{% set _ = opts.append((t.id, t.name)) %}{% endfor %}
+<form method="post" class="panel" novalidate style="max-width:900px">
+  {{ csrf() }}
+  <div class="row g-3">
+    <div class="col-md-6">{{ field('name', 'Intern name', form, errors, required=True, placeholder='Full name') }}</div>
+    <div class="col-md-6">{{ field('dit_id', 'DIT ID', form, errors, required=True, placeholder='e.g. DIT2026031', help='Must be unique. Letters, digits, - _ / allowed.') }}</div>
+    <div class="col-md-6">{{ field('email', 'Email', form, errors, type='email', required=True, placeholder='name@example.com') }}</div>
+    <div class="col-md-6">{{ field('phone', 'Phone number', form, errors, type='tel', required=True, placeholder='10-digit mobile, +91 optional') }}</div>
+    <div class="col-md-6">{{ field('college', 'College name', form, errors, required=True) }}</div>
+    <div class="col-md-6">{{ select('team_id', 'Team', opts, form, errors, blank='No team yet') }}</div>
+    <div class="col-md-6">{{ field('role', 'Assigned role', form, errors, required=True, placeholder='e.g. Frontend Developer') }}</div>
+    <div class="col-md-6">{{ field('joining_date', 'Joining date', form, errors, type='date', required=True) }}</div>
+  </div>
+  <div class="d-flex gap-2 mt-4">
+    <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>{{ 'Save changes' if intern else 'Add intern' }}</button>
+    <a class="btn btn-light" href="{{ url_for('interns') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

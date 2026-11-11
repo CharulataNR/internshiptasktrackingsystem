@@ -1,0 +1,22 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> pick your GitHub repo
+services:
+  - type: web
+    name: intern-task-tracker
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --workers 1 --threads 4 --timeout 60 --access-logfile -
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false          # you will be asked for it in the Render dashboard
+      - key: SEED_DEMO
+        value: "1"           # set to 0 for an empty production database
+      - key: APP_TIMEZONE
+        value: Asia/Kolkata

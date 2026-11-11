@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, empty %}
+{% block title %}Settings{% endblock %}
+{% block heading %}Settings{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-5"><div class="panel h-100">
+    <h2 class="panel-title">My account</h2>
+    <dl class="detail-grid mb-3"><div><dt>Name</dt><dd>{{ current_user['full_name'] }}</dd></div><div><dt>Username</dt><dd class="mono">{{ current_user['username'] }}</dd></div>
+      <div><dt>Role</dt><dd>{{ 'Administrator' if current_user['role'] == 'admin' else 'Team Lead' }}</dd></div></dl>
+    <h3 class="fs-6 fw-semibold">Change password</h3>
+    <form method="post" action="{{ url_for('change_password') }}" novalidate>{{ csrf() }}
+      <div class="mb-2"><label class="form-label" for="cp">Current password</label><input class="form-control" type="password" id="cp" name="current_password" autocomplete="current-password" required></div>
+      <div class="mb-2"><label class="form-label" for="np">New password</label><input class="form-control" type="password" id="np" name="new_password" autocomplete="new-password" required><div class="form-text">At least 8 characters with letters and digits.</div></div>
+      <div class="mb-3"><label class="form-label" for="cf">Confirm new password</label><input class="form-control" type="password" id="cf" name="confirm_password" autocomplete="new-password" required></div>
+      <button class="btn btn-primary">Update password</button></form>
+  </div></div>
+  {% if current_user['role'] == 'admin' %}
+  <div class="col-lg-7"><div class="panel h-100">
+    <h2 class="panel-title">User management</h2>
+    <div class="table-responsive mb-3"><table class="table table-sm align-middle">
+      <thead><tr><th>User</th><th>Role</th><th>Team</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>{% for u in users %}<tr><td>{{ u.full_name }}<div class="sub mono">{{ u.username }}</div></td><td>{{ 'Admin' if u.role == 'admin' else 'Team Lead' }}</td><td>{{ u.team_name or '-' }}</td>
+        <td>{% if u.is_active %}<span class="st st-completed">Active</span>{% else %}<span class="st st-rejected">Disabled</span>{% endif %}</td>
+        <td class="text-end text-nowrap">{% if u.id != current_user['id'] %}
+          <form class="d-inline" method="post" action="{{ url_for('user_reset', user_id=u.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="input-group input-group-sm d-inline-flex w-auto"><input class="form-control" style="width:120px" type="text" name="password" placeholder="New password" autocomplete="off" required><button class="btn btn-outline-secondary" title="Reset password"><i class="bi bi-key"></i></button></div></form>
+          <form class="d-inline" method="post" action="{{ url_for('user_toggle', user_id=u.id) }}">{{ csrf() }}<button class="btn btn-sm btn-light" title="{{ 'Disable' if u.is_active else 'Enable' }}"><i class="bi bi-{{ 'pause-circle' if u.is_active else 'play-circle' }}"></i></button></form>
+          <form class="d-inline" method="post" action="{{ url_for('user_delete', user_id=u.id) }}" data-confirm="Delete user {{ u.username }}?">{{ csrf() }}<button class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>
+        {% else %}<span class="sub">You</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+    <h3 class="fs-6 fw-semibold">Add user</h3>
+    <form method="post" action="{{ url_for('user_new') }}" novalidate>{{ csrf() }}
+      <div class="row g-2">
+        <div class="col-md-6"><input class="form-control" name="full_name" placeholder="Full name" required></div>
+        <div class="col-md-6"><input class="form-control" name="username" placeholder="Username" autocomplete="off" required></div>
+        <div class="col-md-4"><select class="form-select" name="role"><option value="team_lead">Team Lead</option><option value="admin">Administrator</option></select></div>
+        <div class="col-md-4"><select class="form-select" name="team_id"><option value="">Team (for team leads)</option>{% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select></div>
+        <div class="col-md-4"><input class="form-control" type="text" name="password" placeholder="Password" autocomplete="off" required></div>
+        <div class="col-12"><button class="btn btn-primary btn-sm"><i class="bi bi-person-plus me-1"></i>Create user</button></div></div></form>
+  </div></div>
+  <div class="col-12"><div class="panel">
+    <h2 class="panel-title">Recent activity <span class="sub fw-normal">last 60 events</span></h2>
+    {% if logs %}<div class="table-responsive" style="max-height:380px"><table class="table table-sm">
+      <thead><tr><th>When</th><th>User</th><th>Action</th><th>Record</th><th>Details</th></tr></thead>
+      <tbody>{% for l in logs %}<tr><td class="text-nowrap">{{ l.created_at|fmt_dt }}</td><td>{{ l.username or '-' }}</td><td><span class="badge text-bg-light border">{{ l.action }}</span></td>
+        <td>{{ l.entity or '' }}{{ (' #' ~ l.entity_id) if l.entity_id else '' }}</td><td>{{ l.details or '' }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}{{ empty('bi-clock-history', 'No activity recorded yet.') }}{% endif %}
+  </div></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import status_badge, empty %}
+{% block title %}Team report - {{ team.name }}{% endblock %}
+{% block heading %}Team lead report{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-3 no-print">
+  <a class="btn btn-light" href="{{ url_for('reports_page') }}"><i class="bi bi-arrow-left me-1"></i>Back to reports</a>
+  <button class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print / save as PDF</button>
+  <a class="btn btn-outline-primary" href="{{ url_for('export', kind='team_lead_report') }}"><i class="bi bi-file-earmark-excel me-1"></i>Excel (all teams)</a>
+</div>
+<div class="panel mb-3">
+  <h2 class="panel-title">{{ team.name }} <span class="sub fw-normal">Generated {{ generated }}</span></h2>
+  <dl class="detail-grid mb-0">
+    <div><dt>Team leader</dt><dd>{{ team.leader_name or 'Not assigned' }}</dd></div>
+    <div><dt>Leader DIT ID</dt><dd class="mono">{{ team.leader_dit_id or '-' }}</dd></div>
+    <div><dt>Leader email</dt><dd>{{ team.leader_email or '-' }}</dd></div><div><dt>Leader phone</dt><dd>{{ team.leader_phone or '-' }}</dd></div>
+    <div><dt>Total team members</dt><dd>{{ team.members }}</dd></div><div><dt>Total assigned tasks</dt><dd>{{ team.total }}</dd></div>
+    <div><dt>Completed tasks</dt><dd>{{ team.completed }}</dd></div>
+    <div><dt>Pending tasks (not started)</dt><dd>{{ team.not_started }}</dd></div><div><dt>In progress</dt><dd>{{ team.in_progress }}</dd></div>
+    <div><dt>Submitted / under review</dt><dd>{{ team.submitted + team.under_review }}</dd></div>
+    <div><dt>Overdue tasks</dt><dd class="{{ 'due-late' if team.overdue }}">{{ team.overdue }}</dd></div><div><dt>Rejected</dt><dd>{{ team.rejected }}</dd></div>
+    <div><dt>Assessment pending</dt><dd>{{ team.assess_pending }}</dd></div><div><dt>Assessment approved / rejected</dt><dd>{{ team.assess_approved }} / {{ team.assess_rejected }}</dd></div>
+    <div><dt>Average score</dt><dd>{{ '-' if team.avg_score is none else team.avg_score }}</dd></div>
+    <div><dt>Team completion</dt><dd><strong>{{ team.completion_pct }}%</strong></dd></div>
+  </dl>
+</div>
+<div class="panel mb-3"><h2 class="panel-title">Members</h2>
+  <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Name</th><th>DIT ID</th><th>Role</th><th>Email</th><th class="text-center">Tasks done</th></tr></thead>
+  <tbody>{% for m in members %}<tr><td>{{ m.name }}{% if m.id == team.leader_id %} <span class="badge text-bg-warning">Leader</span>{% endif %}</td><td class="mono">{{ m.dit_id }}</td><td>{{ m.role }}</td><td>{{ m.email }}</td><td class="text-center">{{ m.completed_count }}/{{ m.task_count }}</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="panel"><h2 class="panel-title">Task details</h2>
+  {% if tasks %}<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Task</th><th>Intern</th><th>Due</th><th>Status</th><th>Assessment</th><th>Score</th></tr></thead>
+  <tbody>{% for t in tasks %}<tr><td>{{ t.title }} <span class="sub mono">{{ t.task_code }}</span></td><td>{{ t.intern_name }} <span class="sub mono">{{ t.dit_id }}</span></td>
+    <td>{{ t.due_date|fmt_date }}</td><td>{{ status_badge(t.eff_status) }}</td><td>{{ status_badge(t.assessment_status) }}</td><td>{{ '-' if t.assessment_score is none else t.assessment_score }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty('bi-list-check', 'No tasks for this team yet.') }}{% endif %}</div>
+{% endblock %}

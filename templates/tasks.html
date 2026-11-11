@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, status_badge, pager, empty %}
+{% block title %}Task Tracker{% endblock %}
+{% block heading %}Task Tracker{% endblock %}
+{% block content %}
+<form class="panel filters mb-3" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4 col-xl-3"><label class="form-label" for="q">Search DIT ID, intern, task</label>
+      <input class="form-control" id="q" name="q" value="{{ request.args.get('q','') }}" placeholder="DIT2026004, Priya, API&hellip;"></div>
+    <div class="col-6 col-md-4 col-xl-2"><label class="form-label" for="team">Team</label>
+      <select class="form-select" id="team" name="team"><option value="">All teams</option>
+        {% for t in teams %}<option value="{{ t.id }}" {{ 'selected' if request.args.get('team') == t.id|string }}>{{ t.name }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-4 col-xl-2"><label class="form-label" for="college">College</label>
+      <select class="form-select" id="college" name="college"><option value="">All colleges</option>
+        {% for c in colleges %}<option {{ 'selected' if request.args.get('college') == c }}>{{ c }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-3 col-xl-2"><label class="form-label" for="status">Task status</label>
+      <select class="form-select" id="status" name="status"><option value="">All statuses</option>
+        {% for s in TASK_STATUSES %}<option {{ 'selected' if request.args.get('status') == s }}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-3 col-xl-3"><label class="form-label" for="assessment">Assessment status</label>
+      <select class="form-select" id="assessment" name="assessment"><option value="">All</option>
+        {% for s in ASSESSMENT_STATUSES %}<option {{ 'selected' if request.args.get('assessment') == s }}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-3 col-xl-2"><label class="form-label" for="date_field">Date range on</label>
+      <select class="form-select" id="date_field" name="date_field">
+        {% for v, l in [('due_date','Due date'),('assigned_date','Assigned date'),('submission_date','Submission date')] %}<option value="{{ v }}" {{ 'selected' if request.args.get('date_field') == v }}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-3 col-xl-2"><label class="form-label" for="date_from">From</label><input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from','') }}"></div>
+    <div class="col-6 col-md-3 col-xl-2"><label class="form-label" for="date_to">To</label><input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to','') }}"></div>
+    <div class="col-6 col-md-3 col-xl-2"><label class="form-label" for="sort">Sort by</label>
+      <select class="form-select" id="sort" name="sort">
+        {% for v, l in [('newest','Newest first'),('due','Due date (earliest)'),('due_desc','Due date (latest)'),('intern','Intern name'),('status','Status')] %}<option value="{{ v }}" {{ 'selected' if request.args.get('sort') == v }}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="col-12 col-md-3 col-xl-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+      <a class="btn btn-light" href="{{ url_for('tasks') }}" title="Reset filters"><i class="bi bi-x-lg"></i></a></div>
+  </div>
+</form>
+<div class="panel">
+  <h2 class="panel-title"><span>Tasks <span class="sub fw-normal">({{ pg.total }})</span></span>
+    <span class="d-flex gap-2"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('export', kind='task_tracker', **export_args) }}"><i class="bi bi-file-earmark-excel me-1"></i>Export {{ 'filtered ' if export_args else '' }}Excel</a>
+    <a class="btn btn-sm btn-primary" href="{{ url_for('task_new') }}"><i class="bi bi-plus-lg me-1"></i>New task</a></span></h2>
+  {% if tasks %}
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Task</th><th>Intern</th><th>Team</th><th>Assigned</th><th>Due</th><th>Submitted</th><th style="min-width:150px">Status</th><th>Assessment</th><th class="text-end">Actions</th></tr></thead>
+    <tbody>{% for t in tasks %}<tr>
+      <td style="max-width:260px"><a class="fw-semibold text-decoration-none" href="{{ url_for('task_detail', task_id=t.id) }}">{{ t.title }}</a><div class="sub mono">{{ t.task_code }}</div></td>
+      <td>{{ t.intern_name }}<div class="sub mono">{{ t.dit_id }}</div></td><td>{{ t.team_name or '-' }}</td>
+      <td>{{ t.assigned_date|fmt_date }}</td>
+      <td class="{{ 'due-late' if t.eff_status == 'Overdue' }}">{{ t.due_date|fmt_date }}{% if t.days_overdue %}<div class="sub due-late">{{ t.days_overdue }}d late</div>{% endif %}</td>
+      <td>{{ t.submission_date|fmt_date }}</td>
+      <td><form method="post" action="{{ url_for('task_status', task_id=t.id) }}" class="d-flex align-items-center gap-1">{{ csrf() }}
+        <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Update status of {{ t.task_code }}">
+          {% for s in TASK_STATUSES %}<option {{ 'selected' if s == t.eff_status }}>{{ s }}</option>{% endfor %}</select></form></td>
+      <td>{{ status_badge(t.assessment_status) }}{% if t.assessment_score is not none %}<div class="sub">Score {{ t.assessment_score }}</div>{% endif %}</td>
+      <td class="text-end text-nowrap">
+        <a class="btn btn-sm btn-light" href="{{ url_for('task_edit', task_id=t.id) }}" title="Edit"><i class="bi bi-pencil"></i></a>
+        {% if current_user['role'] == 'admin' %}<form class="d-inline" method="post" action="{{ url_for('task_delete', task_id=t.id) }}" data-confirm="Delete task {{ t.task_code }} ({{ t.title }})? This cannot be undone.">{{ csrf() }}
+          <button class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+  {{ pager(pg) }}
+  {% else %}{{ empty('bi-list-check', 'No tasks match the current filters.') }}{% endif %}
+</div>
+{% endblock %}

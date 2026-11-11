@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import empty %}
+{% block title %}Reports{% endblock %}
+{% block heading %}Reports &amp; Excel export{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+  {% for key, (title, desc) in catalog.items() %}
+  <div class="col-md-6 col-xl-3"><div class="panel h-100 d-flex flex-column">
+    <div class="fw-semibold mb-1"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>{{ title }}</div>
+    <p class="sub flex-grow-1">{{ desc }}</p>
+    <a class="btn btn-outline-primary btn-sm align-self-start" href="{{ url_for('export', kind=key) }}"><i class="bi bi-download me-1"></i>Download .xlsx</a>
+  </div></div>
+  {% endfor %}
+</div>
+<div class="panel">
+  <h2 class="panel-title">Team lead reports <span class="sub fw-normal">open a printable report for each team</span></h2>
+  {% if teams %}<div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Team</th><th>Leader</th><th class="text-center">Members</th><th class="text-center">Total</th><th class="text-center">Completed</th><th class="text-center">Pending</th><th class="text-center">Overdue</th><th class="text-center">Assess. pending</th><th>Completion</th><th></th></tr></thead>
+    <tbody>{% for t in teams %}<tr><td class="fw-semibold">{{ t.name }}</td><td>{{ t.leader_name or '-' }}</td><td class="text-center">{{ t.members }}</td><td class="text-center">{{ t.total }}</td>
+      <td class="text-center">{{ t.completed }}</td><td class="text-center">{{ t.not_started }}</td><td class="text-center {{ 'due-late' if t.overdue }}">{{ t.overdue }}</td><td class="text-center">{{ t.assess_pending }}</td>
+      <td style="min-width:150px"><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1"><div class="progress-bar" style="width:{{ t.completion_pct }}%"></div></div><span class="small fw-semibold">{{ t.completion_pct }}%</span></div></td>
+      <td class="text-end"><a class="btn btn-sm btn-primary" href="{{ url_for('team_report', team_id=t.id) }}"><i class="bi bi-file-text me-1"></i>Open report</a></td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty('bi-diagram-3', 'No teams available.') }}{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, status_badge, empty %}
+{% block title %}{{ team.name }}{% endblock %}
+{% block heading %}{{ team.name }}{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-8"><div class="panel h-100">
+    <h2 class="panel-title">Team overview <span class="d-flex gap-2"><a class="btn btn-sm btn-light" href="{{ url_for('teams') }}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('team_report', team_id=team.id) }}"><i class="bi bi-file-text me-1"></i>Team report</a>
+      {% if current_user['role'] == 'admin' %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('team_edit', team_id=team.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</span></h2>
+    <p class="text-muted">{{ team.description or 'No description.' }}</p>
+    <dl class="detail-grid mb-3">
+      <div><dt>Team leader</dt><dd>{{ team.leader_name or 'Not assigned' }}</dd></div>
+      <div><dt>Members</dt><dd>{{ team.members }}</dd></div><div><dt>Tasks</dt><dd>{{ team.completed }} completed of {{ team.total }}</dd></div>
+      <div><dt>Overdue</dt><dd class="{{ 'due-late' if team.overdue }}">{{ team.overdue }}</dd></div>
+    </dl>
+    <div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height:12px"><div class="progress-bar" style="width:{{ team.completion_pct }}%"></div></div><strong>{{ team.completion_pct }}%</strong></div>
+  </div></div>
+  {% if current_user['role'] == 'admin' %}
+  <div class="col-lg-4"><div class="panel h-100">
+    <h2 class="panel-title">Manage members</h2>
+    <form method="post" action="{{ url_for('team_member_add', team_id=team.id) }}" class="mb-3">{{ csrf() }}
+      <label class="form-label" for="add_intern">Add an unassigned intern</label>
+      <div class="input-group"><select class="form-select" name="intern_id" id="add_intern" required><option value="">Select intern&hellip;</option>
+        {% for i in free_interns %}<option value="{{ i.id }}">{{ i.name }} ({{ i.dit_id }})</option>{% endfor %}</select>
+        <button class="btn btn-primary" {{ 'disabled' if not free_interns }}>Add</button></div>
+      {% if not free_interns %}<div class="form-text">All interns already belong to a team.</div>{% endif %}</form>
+    <form method="post" action="{{ url_for('team_leader', team_id=team.id) }}">{{ csrf() }}
+      <label class="form-label" for="leader">Team leader</label>
+      <div class="input-group"><select class="form-select" name="leader_id" id="leader"><option value="">No leader</option>
+        {% for m in members %}<option value="{{ m.id }}" {{ 'selected' if m.id == team.leader_id }}>{{ m.name }}</option>{% endfor %}</select>
+        <button class="btn btn-outline-primary">Set</button></div></form>
+  </div></div>{% endif %}
+</div>
+
+<div class="panel mb-3">
+  <h2 class="panel-title">Team members ({{ members|length }})</h2>
+  {% if members %}<div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Intern</th><th>DIT ID</th><th>Role</th><th>College</th><th class="text-center">Tasks done</th>{% if current_user['role'] == 'admin' %}<th class="text-end">Action</th>{% endif %}</tr></thead>
+    <tbody>{% for m in members %}<tr>
+      <td><a class="fw-semibold text-decoration-none" href="{{ url_for('intern_detail', intern_id=m.id) }}">{{ m.name }}</a>{% if m.id == team.leader_id %} <span class="badge text-bg-warning ms-1">Leader</span>{% endif %}</td>
+      <td class="mono">{{ m.dit_id }}</td><td>{{ m.role }}</td><td>{{ m.college }}</td><td class="text-center">{{ m.completed_count }}/{{ m.task_count }}</td>
+      {% if current_user['role'] == 'admin' %}<td class="text-end"><form class="d-inline" method="post" action="{{ url_for('team_member_remove', team_id=team.id, intern_id=m.id) }}" data-confirm="Remove {{ m.name }} from {{ team.name }}?">{{ csrf() }}
+        <button class="btn btn-sm btn-light text-danger" title="Remove from team"><i class="bi bi-person-dash"></i></button></form></td>{% endif %}</tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty('bi-people', 'This team has no members yet.') }}{% endif %}
+</div>
+
+<div class="panel">
+  <h2 class="panel-title">Team tasks <a class="btn btn-sm btn-primary" href="{{ url_for('task_new') }}"><i class="bi bi-plus-lg me-1"></i>New task</a></h2>
+  {% if tasks %}<div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Task</th><th>Intern</th><th>Due</th><th>Status</th><th>Assessment</th></tr></thead>
+    <tbody>{% for t in tasks %}<tr class="row-link" onclick="location.href='{{ url_for('task_detail', task_id=t.id) }}'"><td>{{ t.title }}<div class="sub mono">{{ t.task_code }}</div></td>
+      <td>{{ t.intern_name }}<div class="sub mono">{{ t.dit_id }}</div></td><td class="{{ 'due-late' if t.eff_status == 'Overdue' }}">{{ t.due_date|fmt_date }}</td>
+      <td>{{ status_badge(t.eff_status) }}</td><td>{{ status_badge(t.assessment_status) }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty('bi-list-check', 'No tasks assigned to this team yet.') }}{% endif %}
+</div>
+{% endblock %}

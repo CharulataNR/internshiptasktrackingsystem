@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, pager, empty %}
+{% block title %}Intern Master{% endblock %}
+{% block heading %}Intern Master{% endblock %}
+{% block content %}
+<form class="panel filters mb-3" method="get">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4"><label class="form-label" for="q">Search by name, DIT ID or email</label>
+      <input class="form-control" id="q" name="q" value="{{ request.args.get('q','') }}" placeholder="e.g. DIT2026004 or Priya"></div>
+    <div class="col-md-3"><label class="form-label" for="college">College</label>
+      <select class="form-select" id="college" name="college"><option value="">All colleges</option>
+        {% for c in colleges %}<option {{ 'selected' if request.args.get('college') == c }}>{{ c }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label" for="team">Team</label>
+      <select class="form-select" id="team" name="team"><option value="">All teams</option>
+        {% if current_user['role'] == 'admin' %}<option value="none" {{ 'selected' if request.args.get('team') == 'none' }}>Unassigned</option>{% endif %}
+        {% for t in teams %}<option value="{{ t.id }}" {{ 'selected' if request.args.get('team') == t.id|string }}>{{ t.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1" type="submit"><i class="bi bi-search me-1"></i>Filter</button>
+      <a class="btn btn-light" href="{{ url_for('interns') }}" title="Reset filters"><i class="bi bi-x-lg"></i></a></div>
+  </div>
+</form>
+<div class="panel">
+  <h2 class="panel-title"><span>Interns <span class="sub fw-normal">({{ pg.total }})</span></span>
+    <span class="d-flex gap-2"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('export', kind='intern_master') }}"><i class="bi bi-file-earmark-excel me-1"></i>Export Excel</a>
+    {% if current_user['role'] == 'admin' %}<a class="btn btn-sm btn-primary" href="{{ url_for('intern_new') }}"><i class="bi bi-plus-lg me-1"></i>Add intern</a>{% endif %}</span></h2>
+  {% if interns %}
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Intern</th><th>DIT ID</th><th>College</th><th>Team</th><th>Role</th><th>Joined</th><th class="text-center">Tasks</th><th class="text-end">Actions</th></tr></thead>
+    <tbody>{% for i in interns %}<tr>
+      <td><a class="fw-semibold text-decoration-none" href="{{ url_for('intern_detail', intern_id=i.id) }}">{{ i.name }}</a><div class="sub">{{ i.email }}</div></td>
+      <td class="mono">{{ i.dit_id }}</td><td>{{ i.college }}</td><td>{{ i.team_name or '-' }}</td><td>{{ i.role }}</td><td>{{ i.joining_date|fmt_date }}</td>
+      <td class="text-center">{{ i.completed_count }}/{{ i.task_count }}</td>
+      <td class="text-end text-nowrap">
+        <a class="btn btn-sm btn-light" href="{{ url_for('intern_detail', intern_id=i.id) }}" title="View"><i class="bi bi-eye"></i></a>
+        {% if current_user['role'] == 'admin' %}
+        <a class="btn btn-sm btn-light" href="{{ url_for('intern_edit', intern_id=i.id) }}" title="Edit"><i class="bi bi-pencil"></i></a>
+        <form class="d-inline" method="post" action="{{ url_for('intern_delete', intern_id=i.id) }}" data-confirm="Delete {{ i.name }} ({{ i.dit_id }})? This also deletes their {{ i.task_count }} task(s) and cannot be undone.">
+          {{ csrf() }}<button class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>{% endif %}
+      </td></tr>{% endfor %}</tbody></table></div>
+  {{ pager(pg) }}
+  {% else %}{{ empty('bi-people', 'No interns match your search.') }}{% endif %}
+</div>
+{% endblock %}

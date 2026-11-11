@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, field, select %}
+{% block title %}{{ 'Edit team' if team else 'Create team' }}{% endblock %}
+{% block heading %}{{ 'Edit team' if team else 'Create team' }}{% endblock %}
+{% block content %}
+{% set opts = [] %}{% for l in leaders %}{% set _ = opts.append((l.id, l.name ~ ' (' ~ l.dit_id ~ ')')) %}{% endfor %}
+<form method="post" class="panel" novalidate style="max-width:720px">
+  {{ csrf() }}
+  <div class="row g-3">
+    <div class="col-12">{{ field('name', 'Team name', form, errors, required=True, placeholder='e.g. Web Development') }}</div>
+    <div class="col-12"><label class="form-label" for="description">Description</label>
+      <textarea class="form-control {{ 'is-invalid' if errors.get('description') }}" id="description" name="description" rows="2" maxlength="300">{{ form.get('description') or '' }}</textarea>
+      {% if errors.get('description') %}<div class="invalid-feedback">{{ errors['description'] }}</div>{% endif %}</div>
+    <div class="col-12">{{ select('leader_id', 'Team leader', opts, form, errors, blank='No leader yet') }}
+      <div class="form-text">Only interns who have no team yet (or are already in this team) can be chosen. The leader is added to the team automatically.</div></div>
+  </div>
+  <div class="d-flex gap-2 mt-4"><button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i>{{ 'Save changes' if team else 'Create team' }}</button>
+    <a class="btn btn-light" href="{{ url_for('teams') }}">Cancel</a></div>
+</form>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'auth.html' %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="auth-grid">
+  <section class="auth-side">
+    <div class="brand mb-5"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="DIT logo"><span class="brand-text">InternTrack<small>Task tracking system</small></span></div>
+    <h1>Every intern, task and deadline in one place.</h1>
+    <p>Track DIT IDs, team allocations, submissions and assessments, then export clean Excel reports for the internship coordinator.</p>
+    <ul class="auth-points">
+      <li><i class="bi bi-alarm"></i>Overdue work is flagged automatically</li>
+      <li><i class="bi bi-people"></i>Team leads see only their own team</li>
+      <li><i class="bi bi-file-earmark-spreadsheet"></i>Eight ready-made Excel reports</li>
+    </ul>
+  </section>
+  <section class="auth-form">
+    <form method="post" class="auth-card" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Sign in</h2>
+      <p class="text-muted">Use the account issued by your administrator.</p>
+      <div class="mb-3"><label class="form-label" for="username">Username</label>
+        <input class="form-control form-control-lg" id="username" name="username" autocomplete="username" autofocus required></div>
+      <div class="mb-4"><label class="form-label" for="password">Password</label>
+        <div class="input-group input-group-lg"><input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required>
+          <button class="btn btn-outline-secondary" type="button" data-toggle-password="#password" aria-label="Show password"><i class="bi bi-eye"></i></button></div></div>
+      <button class="btn btn-primary btn-lg w-100" type="submit">Sign in</button>
+      <p class="small text-muted mt-4 mb-0">Demo accounts are listed in the README. Change the default passwords after the first login.</p>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, empty %}
+{% block title %}Team Management{% endblock %}
+{% block heading %}Team Management{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2 class="panel-title">Teams <span class="d-flex gap-2"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('export', kind='team_allocation') }}"><i class="bi bi-file-earmark-excel me-1"></i>Team allocation (Excel)</a>
+    {% if current_user['role'] == 'admin' %}<a class="btn btn-sm btn-primary" href="{{ url_for('team_new') }}"><i class="bi bi-plus-lg me-1"></i>Create team</a>{% endif %}</span></h2>
+  {% if teams %}<div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Team</th><th>Leader</th><th class="text-center">Members</th><th class="text-center">Tasks</th><th class="text-center">Overdue</th><th style="min-width:190px">Completion</th><th class="text-end">Actions</th></tr></thead>
+    <tbody>{% for t in teams %}<tr>
+      <td><a class="fw-semibold text-decoration-none" href="{{ url_for('team_detail', team_id=t.id) }}">{{ t.name }}</a><div class="sub">{{ t.description or '' }}</div></td>
+      <td>{% if t.leader_name %}{{ t.leader_name }}<div class="sub mono">{{ t.leader_dit_id }}</div>{% else %}<span class="text-muted">Not assigned</span>{% endif %}</td>
+      <td class="text-center">{{ t.members }}</td><td class="text-center">{{ t.completed }}/{{ t.total }}</td>
+      <td class="text-center">{% if t.overdue %}<span class="due-late">{{ t.overdue }}</span>{% else %}0{% endif %}</td>
+      <td><div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1"><div class="progress-bar" style="width:{{ t.completion_pct }}%"></div></div><span class="small fw-semibold">{{ t.completion_pct }}%</span></div></td>
+      <td class="text-end text-nowrap"><a class="btn btn-sm btn-light" href="{{ url_for('team_detail', team_id=t.id) }}" title="Open"><i class="bi bi-eye"></i></a>
+        {% if current_user['role'] == 'admin' %}<a class="btn btn-sm btn-light" href="{{ url_for('team_edit', team_id=t.id) }}" title="Edit"><i class="bi bi-pencil"></i></a>
+        <form class="d-inline" method="post" action="{{ url_for('team_delete', team_id=t.id) }}" data-confirm="Delete team '{{ t.name }}'? Its {{ t.members }} member(s) stay in the system but become unassigned.">{{ csrf() }}
+          <button class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty('bi-diagram-3', 'No teams yet.') }}{% endif %}
+</div>
+{% endblock %}
